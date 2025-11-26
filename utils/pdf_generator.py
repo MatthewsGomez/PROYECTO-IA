@@ -114,7 +114,7 @@ def generar_pdf_historial(historial_data, nombre_usuario):
         elements.append(pred_title_result)
         
         pred_table_data = [
-            ['Modelo', '<b>Predicción'],
+            ['Modelo', 'Predicción'],
             ['Random Forest', predicciones.get('RandomForest', 'N/A')],
             ['KNN', predicciones.get('KNN', 'N/A')],
             ['SVM', predicciones.get('SVM', 'N/A')],
