@@ -74,7 +74,7 @@ def generar_pdf_historial(historial_data, nombre_usuario):
         # Datos ingresados
         datos = prediccion.get('datos_ingresados', {})
         datos_table_data = [
-            ['<b>Parámetro</b>', '<b>Valor</b>'],
+            ['Parámetro', 'Respuesta del usuario'],
             ['Día de la semana', datos.get('Day_of_Week', 'N/A')],
             ['Control de cruce', datos.get('Junction_Control', 'N/A')],
             ['Detalle de cruce', datos.get('Junction_Detail', 'N/A')],
@@ -114,7 +114,7 @@ def generar_pdf_historial(historial_data, nombre_usuario):
         elements.append(pred_title_result)
         
         pred_table_data = [
-            ['<b>Modelo</b>', '<b>Predicción</b>'],
+            ['Modelo', '<b>Predicción'],
             ['Random Forest', predicciones.get('RandomForest', 'N/A')],
             ['KNN', predicciones.get('KNN', 'N/A')],
             ['SVM', predicciones.get('SVM', 'N/A')],
