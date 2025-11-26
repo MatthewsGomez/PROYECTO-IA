@@ -1,12 +1,16 @@
 from flask import Blueprint, request, jsonify
-from flask_mail import Message
+import resend
 from utils.pdf_generator import generar_pdf_historial
+import base64
+import os
 
 # Variable mysql que se asignará desde app.py
 mysql = None
-mail = None
 
 user_bp = Blueprint('user_routes', __name__)
+
+# Configurar Resend (agrega esto al inicio)
+resend.api_key = os.environ.get('re_g4mfkoxj_C2Cq2Kc81FBptCcvGcouL68S')
 
 # ==============================
 # Ruta para obtener todos los usuarios (opcional)
@@ -75,89 +79,85 @@ def login_user():
 # ==============================
 # Historial del usuario
 # ==============================
-@user_bp.route("/historial/<int:id_usuario>", methods=["GET"])
-def historial_usuario(id_usuario):
-    from mappings import accident_severity, day_of_week, junction_control, junction_detail, light_conditions, local_authority, road_surface_conditions, road_type, speed_limit, urban_or_rural_area, weather_conditions, vehicle_type, number_of_casualties, number_of_vehicles
+# @user_bp.route("/historial/<int:id_usuario>", methods=["GET"])
+# def historial_usuario(id_usuario):
+#     from mappings import accident_severity, day_of_week, junction_control, junction_detail, light_conditions, local_authority, road_surface_conditions, road_type, speed_limit, urban_or_rural_area, weather_conditions, vehicle_type, number_of_casualties, number_of_vehicles
 
-    severity_emojis = {0: "💚", 1: "🚨", 2: "🚑"}
+#     severity_emojis = {0: "💚", 1: "🚨", 2: "🚑"}
 
-    try:
-        with mysql.connection.cursor() as cursor:
-            cursor.execute("""
-                SELECT 
-                    r.id,
-                    r.fecha_respuesta,
-                    r.Day_of_Week,
-                    r.Junction_Control,
-                    r.Junction_Detail,
-                    r.Light_Conditions,
-                    r.Local_Authority_District,
-                    r.Road_Surface_Conditions,
-                    r.Road_Type,
-                    r.Speed_limit,
-                    r.Urban_or_Rural_Area,
-                    r.Weather_Conditions,
-                    r.Vehicle_Type,
-                    r.Number_of_Casualties,
-                    r.Number_of_Vehicles,
-                    p.modelo_RF,
-                    p.modelo_KNN,
-                    p.modelo_SVM,
-                    p.fecha_prediccion
-                FROM respuestas r
-                JOIN predicciones p ON r.id = p.id_respuestas
-                WHERE r.id_usuario = %s
-                ORDER BY r.fecha_respuesta DESC
-            """, (id_usuario,))
-            datos = cursor.fetchall()
+#     try:
+#         with mysql.connection.cursor() as cursor:
+#             cursor.execute("""
+#                 SELECT 
+#                     r.id,
+#                     r.fecha_respuesta,
+#                     r.Day_of_Week,
+#                     r.Junction_Control,
+#                     r.Junction_Detail,
+#                     r.Light_Conditions,
+#                     r.Local_Authority_District,
+#                     r.Road_Surface_Conditions,
+#                     r.Road_Type,
+#                     r.Speed_limit,
+#                     r.Urban_or_Rural_Area,
+#                     r.Weather_Conditions,
+#                     r.Vehicle_Type,
+#                     r.Number_of_Casualties,
+#                     r.Number_of_Vehicles,
+#                     p.modelo_RF,
+#                     p.modelo_KNN,
+#                     p.modelo_SVM,
+#                     p.fecha_prediccion
+#                 FROM respuestas r
+#                 JOIN predicciones p ON r.id = p.id_respuestas
+#                 WHERE r.id_usuario = %s
+#                 ORDER BY r.fecha_respuesta DESC
+#             """, (id_usuario,))
+#             datos = cursor.fetchall()
 
-        if not datos:
-            return jsonify({"mensaje": "No hay registros para este usuario"}), 404
+#         if not datos:
+#             return jsonify({"mensaje": "No hay registros para este usuario"}), 404
 
-        historial = []
-        for fila in datos:
-            historial.append({
-                "id_respuesta": fila[0],
-                "fecha_respuesta": str(fila[1]),
-                "datos_ingresados": {
-                    "Day_of_Week": day_of_week.get(fila[2], fila[2]),
-                    "Junction_Control": junction_control.get(fila[3], fila[3]),
-                    "Junction_Detail": junction_detail.get(fila[4], fila[4]),
-                    "Light_Conditions": light_conditions.get(fila[5], fila[5]),
-                    "Local_Authority_District": local_authority.get(fila[6], fila[6]),
-                    "Road_Surface_Conditions": road_surface_conditions.get(fila[7], fila[7]),
-                    "Road_Type": road_type.get(fila[8], fila[8]),
-                    "Speed_limit": speed_limit.get(fila[9], fila[9]),
-                    "Urban_or_Rural_Area": urban_or_rural_area.get(fila[10], fila[10]),
-                    "Weather_Conditions": weather_conditions.get(fila[11], fila[11]),
-                    "Vehicle_Type": vehicle_type.get(fila[12], fila[12]),
-                    "Number_of_Casualties": number_of_casualties.get(fila[13], fila[13]),
-                    "Number_of_Vehicles": number_of_vehicles.get(fila[14], fila[14]),
-                },
-                "predicciones": {
-                    "RandomForest": f"{severity_emojis.get(fila[15],'❓')} {accident_severity.get(fila[15],'Desconocido')}",
-                    "KNN": f"{severity_emojis.get(fila[16],'❓')} {accident_severity.get(fila[16],'Desconocido')}",
-                    "SVM": f"{severity_emojis.get(fila[17],'❓')} {accident_severity.get(fila[17],'Desconocido')}",
-                    "fecha_prediccion": str(fila[18])
-                }
-            })
+#         historial = []
+#         for fila in datos:
+#             historial.append({
+#                 "id_respuesta": fila[0],
+#                 "fecha_respuesta": str(fila[1]),
+#                 "datos_ingresados": {
+#                     "Day_of_Week": day_of_week.get(fila[2], fila[2]),
+#                     "Junction_Control": junction_control.get(fila[3], fila[3]),
+#                     "Junction_Detail": junction_detail.get(fila[4], fila[4]),
+#                     "Light_Conditions": light_conditions.get(fila[5], fila[5]),
+#                     "Local_Authority_District": local_authority.get(fila[6], fila[6]),
+#                     "Road_Surface_Conditions": road_surface_conditions.get(fila[7], fila[7]),
+#                     "Road_Type": road_type.get(fila[8], fila[8]),
+#                     "Speed_limit": speed_limit.get(fila[9], fila[9]),
+#                     "Urban_or_Rural_Area": urban_or_rural_area.get(fila[10], fila[10]),
+#                     "Weather_Conditions": weather_conditions.get(fila[11], fila[11]),
+#                     "Vehicle_Type": vehicle_type.get(fila[12], fila[12]),
+#                     "Number_of_Casualties": number_of_casualties.get(fila[13], fila[13]),
+#                     "Number_of_Vehicles": number_of_vehicles.get(fila[14], fila[14]),
+#                 },
+#                 "predicciones": {
+#                     "RandomForest": f"{severity_emojis.get(fila[15],'❓')} {accident_severity.get(fila[15],'Desconocido')}",
+#                     "KNN": f"{severity_emojis.get(fila[16],'❓')} {accident_severity.get(fila[16],'Desconocido')}",
+#                     "SVM": f"{severity_emojis.get(fila[17],'❓')} {accident_severity.get(fila[17],'Desconocido')}",
+#                     "fecha_prediccion": str(fila[18])
+#                 }
+#             })
 
-        return jsonify({"id_usuario": id_usuario, "historial": historial}), 200
+#         return jsonify({"id_usuario": id_usuario, "historial": historial}), 200
 
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+#     except Exception as e:
+#         return jsonify({"error": str(e)}), 500 
 
 # ==============================
-# Enviar historial por email
+# Enviar historial por email usando RESEND
 # ==============================
 @user_bp.route("/enviar_historial", methods=["POST"])
 def enviar_historial_email():
     """
-    Endpoint para enviar el historial del usuario en PDF por correo electrónico
-    Body: {
-        "id_usuario": 123,
-        "email": "usuario@example.com"
-    }
+    Endpoint para enviar el historial del usuario en PDF por correo electrónico usando Resend
     """
     data = request.get_json()
     id_usuario = data.get("id_usuario")
@@ -165,6 +165,10 @@ def enviar_historial_email():
     
     if not id_usuario or not email_destino:
         return jsonify({"error": "Faltan datos: id_usuario y email son requeridos"}), 400
+    
+    # Verificar que Resend API Key esté configurada
+    if not resend.api_key:
+        return jsonify({"error": "RESEND_API_KEY no configurada"}), 500
     
     try:
         # Obtener el nombre de usuario
@@ -177,7 +181,7 @@ def enviar_historial_email():
             
         nombre_usuario = usuario_data[0]
         
-        # Obtener el historial usando la función existente
+        # Obtener el historial (tu código existente)
         from mappings import accident_severity, day_of_week, junction_control, junction_detail, light_conditions, local_authority, road_surface_conditions, road_type, speed_limit, urban_or_rural_area, weather_conditions, vehicle_type, number_of_casualties, number_of_vehicles
 
         severity_emojis = {0: "💚", 1: "🚨", 2: "🚑"}
@@ -246,45 +250,61 @@ def enviar_historial_email():
         
         # Generar PDF
         pdf_buffer = generar_pdf_historial(historial_data, nombre_usuario)
+        pdf_data = pdf_buffer.read()
         
-        # Crear y enviar email
-        msg = Message(
-            subject=f"Historial de Predicciones - {nombre_usuario}",
-            recipients=[email_destino],
-            body=f"""Hola {nombre_usuario},
-
-Adjunto encontrarás tu historial completo de predicciones de severidad de accidentes.
-
-Este documento contiene todas las predicciones que has realizado en el sistema, incluyendo:
-- Datos ingresados para cada análisis
-- Resultados de los tres modelos de predicción (Random Forest, KNN, SVM)
-- Fechas y horas de cada predicción
-
-Total de predicciones: {len(historial)}
-
-Gracias por usar nuestro Sistema de Predicción de Severidad de Accidentes.
-
----
-Este es un correo automático, por favor no responder.
-"""
-        )
+        # Convertir PDF a base64 para Resend
+        pdf_base64 = base64.b64encode(pdf_data).decode()
         
-        # Adjuntar PDF
-        msg.attach(
-            f"historial_{nombre_usuario}.pdf",
-            "application/pdf",
-            pdf_buffer.read()
-        )
-        
+        # Crear y enviar email con Resend
+        params = {
+            "from": "Sistema de Predicciones <onboarding@resend.dev>",
+            "to": [email_destino],
+            "subject": f"Historial de Predicciones - {nombre_usuario}",
+            "html": f'''
+            <html>
+            <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                <h2 style="color: #1a73e8;">Hola {nombre_usuario},</h2>
+                
+                <p>Adjunto encontrarás tu historial completo de predicciones de severidad de accidentes.</p>
+                
+                <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                    <h3 style="margin-top: 0;">📊 Este documento contiene:</h3>
+                    <ul>
+                        <li>Datos ingresados para cada análisis</li>
+                        <li>Resultados de los tres modelos de predicción (Random Forest, KNN, SVM)</li>
+                        <li>Fechas y horas de cada predicción</li>
+                    </ul>
+                    <p style="font-size: 18px; margin: 10px 0;"><strong>Total de predicciones: {len(historial)}</strong></p>
+                </div>
+                
+                <p>Gracias por usar nuestro Sistema de Predicción de Severidad de Accidentes.</p>
+                
+                <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+                
+                <p style="color: #666; font-size: 12px;">
+                    Este es un correo automático, por favor no responder.
+                </p>
+            </body>
+            </html>
+            ''',
+            "attachments": [{
+                "filename": f"historial_{nombre_usuario}.pdf",
+                "content": pdf_base64
+            }]
+        }
+
         # Enviar email
-        mail.send(msg)
+        email = resend.Emails.send(params)
+        
+        print(f"📧 Resend Response: {email}")
         
         return jsonify({
             "mensaje": "Historial enviado exitosamente",
             "email": email_destino,
-            "total_predicciones": len(historial)
+            "total_predicciones": len(historial),
+            "resend_id": email.get("id")
         }), 200
         
     except Exception as e:
-        print(f"Error al enviar historial: {str(e)}")
+        print(f"❌ Error al enviar historial con Resend: {str(e)}")
         return jsonify({"error": f"Error al enviar el correo: {str(e)}"}), 500
