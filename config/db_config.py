@@ -3,10 +3,20 @@ from flask_mail import Mail
 import os
 
 def init_db(app):
-    app.config['MYSQL_HOST'] = 'bsiamiq4tnd2zfjvfe1e-mysql.services.clever-cloud.com'
-    app.config['MYSQL_USER'] = 'ux7dua5mflupv0ub'
-    app.config['MYSQL_PASSWORD'] = 'qcnehmrZtnzplx7l4CZ8'
-    app.config['MYSQL_DB'] = 'bsiamiq4tnd2zfjvfe1e'
-    app.config['MYSQL_PORT'] = 3306
+    # Cargar configuración SOLO desde variables de entorno
+    # No hay valores por defecto con credenciales reales
+    app.config['MYSQL_HOST'] = os.environ.get('MYSQL_HOST', 'localhost')
+    app.config['MYSQL_USER'] = os.environ.get('MYSQL_USER', 'usuario_desarrollo')
+    app.config['MYSQL_PASSWORD'] = os.environ.get('MYSQL_PASSWORD', 'password_desarrollo')
+    app.config['MYSQL_DB'] = os.environ.get('MYSQL_DB', 'basedatos_desarrollo')
+    app.config['MYSQL_PORT'] = int(os.environ.get('MYSQL_PORT', 3306))
+    
+    # Verificar que todas las variables estén configuradas
+    required_vars = ['MYSQL_HOST', 'MYSQL_USER', 'MYSQL_PASSWORD', 'MYSQL_DB']
+    missing_vars = [var for var in required_vars if not os.environ.get(var)]
+    
+    if missing_vars:
+        raise Exception(f"Faltan variables de entorno: {', '.join(missing_vars)}")
+    
     mysql = MySQL(app)
     return mysql
