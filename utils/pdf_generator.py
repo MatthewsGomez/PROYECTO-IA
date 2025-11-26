@@ -45,7 +45,7 @@ def generar_pdf_historial(historial_data, nombre_usuario):
     normal_style = styles['Normal']
     
     # Título principal
-    title = Paragraph(f"📊 Historial de Predicciones", title_style)
+    title = Paragraph(f"Historial de Predicciones", title_style)
     elements.append(title)
     
     # Información del usuario
