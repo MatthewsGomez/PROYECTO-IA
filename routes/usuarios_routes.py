@@ -9,8 +9,8 @@ mysql = None
 
 user_bp = Blueprint('user_routes', __name__)
 
-# Configurar Resend (agrega esto al inicio)
-resend.api_key = os.environ.get('re_g4mfkoxj_C2Cq2Kc81FBptCcvGcouL68S')
+# Configurar Resend 
+resend.api_key = os.environ.get('RESEND_API_KEY')
 
 # ==============================
 # Ruta para obtener todos los usuarios (opcional)
