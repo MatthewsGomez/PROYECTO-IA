@@ -24,9 +24,9 @@ def get_users():
         return jsonify(data), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
+        
 # ==============================
-# Registro de usuario
+# Registro de usuario CON VALIDACIÓN
 # ==============================
 @user_bp.route("/register", methods=["POST"])
 def register_user():
@@ -39,13 +39,26 @@ def register_user():
 
     try:
         with mysql.connection.cursor() as cursor:
+            # PRIMERO: Verificar si el usuario ya existe
+            cursor.execute("SELECT id FROM usuarios WHERE usuario = %s", (usuario,))
+            usuario_existente = cursor.fetchone()
+            
+            if usuario_existente:
+                return jsonify({"error": "El usuario ya está registrado"}), 409  # 409 Conflict
+            
+            # SEGUNDO: Si no existe, registrar el nuevo usuario
             cursor.execute(
                 "INSERT INTO usuarios (usuario, contrseña) VALUES (%s, %s)",
                 (usuario, contraseña)
             )
             mysql.connection.commit()
             id_usuario = cursor.lastrowid
-        return jsonify({"mensaje": "Usuario registrado correctamente", "id_usuario": id_usuario}), 201
+            
+        return jsonify({
+            "mensaje": "Usuario registrado correctamente", 
+            "id_usuario": id_usuario
+        }), 201
+        
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
